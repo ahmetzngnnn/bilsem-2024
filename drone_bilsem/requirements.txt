@@ -1,0 +1,7 @@
+numpy>=1.21
+opencv-python>=4.5
+dronekit>=2.9.2
+pymavlink>=2.4.16
+tflite-runtime>=2.6
+# Eğer Jetson veya tam Tensorflow gerekiyorsa:
+# tensorflow>=2.6.0

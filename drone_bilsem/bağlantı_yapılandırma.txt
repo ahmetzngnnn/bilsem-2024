@@ -1,0 +1,229 @@
+
+---
+
+# RASPBERRY PI <— Ethernet —> PC (Mission Planner/Gazebo/ArduPilot)
+
+## Adım Adım Bağlantı Kılavuzu
+
+---
+
+## 1. Donanım Bağlantısı
+
+* **Raspberry Pi** ve **PC (Linux/Windows)** arasında bir **Ethernet kablosu** (CAT5/6) tak.
+
+  * Güncel cihazlarda Crossover’a gerek yok, standart düz kablo yeterli.
+
+---
+
+## 2. IP Konfigürasyonu
+
+### **A) Raspberry Pi'de Statik IP Tanımlama**
+
+#### Otomatik (Tavsiye edilen yol, **/etc/dhcpcd.conf** ile):
+
+```bash
+sudo nano /etc/dhcpcd.conf
+```
+
+En sona şunu ekle:
+
+```
+interface eth0
+  static ip_address=192.168.10.10/24
+  static routers=192.168.10.2
+  static domain_name_servers=8.8.8.8
+```
+
+Kaydet ve çık (`CTRL+O`, ENTER, `CTRL+X`),
+sonra servisi yeniden başlat:
+
+```bash
+sudo service dhcpcd restart
+```
+
+veya sistemi reboot et:
+
+```bash
+sudo reboot
+```
+
+#### Elle, geçici (sistem yeniden başlarsa silinir):
+
+```bash
+sudo ifconfig eth0 192.168.10.10/24 up
+sudo route add default gw 192.168.10.2 eth0
+```
+
+---
+
+### **B) PC’de (Linux veya Windows) Statik IP Tanımlama**
+
+#### **Linux (Ubuntu, Debian, Mint, vb.):**
+
+* Ağ Bağlantılarını aç (GUI'de veya terminalde):
+
+**Terminalden:**
+Bağlantı ismini bul:
+
+```bash
+nmcli con show
+```
+
+Varsayalım adı **"Wired connection 1"** ve arayüz adı **enp5s0**.
+
+Statik IP ayarla:
+
+```bash
+sudo nmcli con mod "Wired connection 1" ipv4.addresses 192.168.10.2/24
+sudo nmcli con mod "Wired connection 1" ipv4.method manual
+sudo nmcli con up "Wired connection 1"
+```
+
+#### **Windows:**
+
+1. **Denetim Masası > Ağ ve Paylaşım Merkezi > Bağdaştırıcı Ayarlarını Değiştir**
+2. Ethernet kartına sağ tık → Özellikler
+3. **Internet Protokolü Sürüm 4 (TCP/IPv4)** seç > Özellikler
+4. **Aşağıdaki IP adresini kullan:**
+
+   * IP adresi: `192.168.10.2`
+   * Alt ağ maskesi: `255.255.255.0`
+   * Varsayılan ağ geçidi: (boş bırakabilirsin)
+   * DNS: `8.8.8.8` yazabilirsin
+
+---
+
+## 3. Bağlantı Testi
+
+Her iki cihazda da karşılıklı **ping** komutu ile kontrol et:
+
+* Raspberry Pi’de:
+
+  ```bash
+  ping 192.168.10.2
+  ```
+* PC’de:
+
+  ```bash
+  ping 192.168.10.10
+  ```
+
+Ping başarılıysa bağlantı tamam!
+
+---
+
+## 4. Mission Planner / Gazebo / SITL Ayarları
+
+### **A) Windows’da Mission Planner ile TCP Server (Bridge) Açmak**
+
+* Mission Planner’ı aç
+* **Simulation** menüsünden **TCP Server** başlat
+* Port: **5762** (veya kodunda ne kullanıyorsan)
+
+### **B) Linux’da Gazebo + ArduPilot SITL ile TCP Server Açmak**
+
+```bash
+sim_vehicle.py -v ArduCopter -f gazebo-iris --console --map --out=tcp:0.0.0.0:5762
+```
+
+Ya da doğrudan ArduPilot parametresiyle:
+
+```bash
+./ArduCopter.elf --uartA=tcp:0.0.0.0:5762
+```
+
+**Not:**
+
+* **0.0.0.0** ile tüm ağ arayüzlerinde dinler.
+* Firewall varsa `sudo ufw disable` ile kapat.
+
+---
+
+## 5. Raspberry Pi Yazılımında Kod Değişikliği
+
+Kendi yazılımında, **Mission Planner veya Gazebo’nun IP ve portunu** şöyle ayarla:
+
+```python
+MISSION_PLANNER_IP = "192.168.10.2"
+MISSION_PLANNER_PORT = 5762
+vehicle = connect(f"tcp:{MISSION_PLANNER_IP}:{MISSION_PLANNER_PORT}", wait_ready=True)
+```
+
+---
+
+## 6. Bağlantı Akışı
+
+1. Her iki makinede **statik IP** ayarlanır (aynı subnet: 192.168.10.x/24).
+2. PC (Linux/Windows) üzerinde Mission Planner veya Gazebo/SITL **TCP server** başlatılır.
+3. Raspberry Pi, **TCP client** olarak yukarıdaki kodla bağlanır.
+4. Artık veri ve komut alışverişi doğrudan ethernet üzerinden yapılır.
+
+---
+
+## 7. Sık Sorulan Sorunlar ve Çözümleri
+
+* **Port çatışması:** Aynı portta başka uygulama olmamalı.
+* **Firewall problemi:** Özellikle Ubuntu’da `sudo ufw disable` ile kapat.
+* **Crossover kabloya gerek yok, modern cihazlarda normal ethernet kablosu çalışır.**
+* **Bağlantı kurulamıyorsa:**
+
+  * IP’leri, subneti, kabloyu, portu tekrar kontrol et.
+  * `netstat -tlnp` ile portun dinlendiğini kontrol et.
+  * Her iki cihazda da ethernetin gerçekten bağlı olduğunu doğrula (`ip a` veya `ifconfig` ile).
+
+---
+
+## 8. Hızlı Kontrol Komutları
+
+**Raspberry Pi:**
+
+```bash
+ip a | grep eth0
+```
+
+**PC:**
+
+```bash
+ip a | grep enp5s0
+```
+
+Veya Windows’da **cmd**’de:
+
+```cmd
+ipconfig
+```
+
+---
+
+## 9. Özet Diyagram
+
+```
+[ Raspberry Pi ]
+   IP: 192.168.10.10
+   eth0 <====> Ethernet Kablo <====> enp5s0
+                                 IP: 192.168.10.2
+                           [ PC: Ubuntu/Windows ]
+                          (Mission Planner / SITL / Gazebo)
+```
+
+---
+
+## 10. Kısayol: Kendi Yazılımlarında (Python) Bağlantı
+
+```python
+vehicle = connect("tcp:192.168.10.2:5762", wait_ready=True)
+```
+
+* Mission Planner TCP Server: Windows’da aç
+* SITL TCP Server: Linux’da aç
+* Port **5762** en çok tercih edilen
+
+---
+
+## 11. Notlar
+
+* **Wi-Fi ile eşzamanlı kullanılabilir** ancak karışıklık olmaması için etherneti izole tut.
+* Gerekirse cihazların **hostname** ile değil, doğrudan **IP** ile bağlantı kur.
+* Kod ve bağlantı sırasında hata alırsan, tam hata mesajı ile tekrar kontrol et.
+
+---

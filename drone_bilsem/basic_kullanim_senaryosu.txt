@@ -1,0 +1,41 @@
+BASIC KULLANIM SENARYOSU: OTONOM YANGIN TESPİT ve MÜDAHALE DRONE SİSTEMİ
+
+1) DONANIMI HAZIRLA
+   - Drone’u uçuşa hazır şekilde aç.
+   - Pixhawk/telemetri ve kamera bağlantılarını kontrol et.
+   - Raspberry Pi veya Jetson’a kamera ve güç ver.
+
+2) GEREKLİ KÜTÜPHANELERİ KUR
+   - Terminalde:
+        pip3 install -r requirements.txt
+
+3) DRONE SCRIPTİNİ BAŞLAT (Sunucu tarafı)
+   - Terminalde:
+        python3 drone_mission.py
+   - Script, alanı otomatik olarak grid’e bölecek ve tarama görevini başlatacaktır.
+
+4) GÖRÜNTÜ İŞLEME SCRIPTİNİ BAŞLAT (İstemci tarafı)
+   - Terminalde:
+        python3 TFLite_detection_webcam_simple.py --modeldir Fire_detection_model --graph detect.tflite --labels labelmap.txt
+
+5) ÇALIŞMA AKIŞI
+   - Drone belirtilen alanı sırayla gezer (her hücreye gider).
+   - Görüntü işleme scripti "fire" tespit ederse:
+        → Drone, otomatik olarak yangına yönelir ve ortaladığında su bırakma komutu çalışır.
+        → Müdahale tamamlanınca drone eve döner (RTL).
+   - Eğer hiç yangın bulunmazsa, tüm alan tarandıktan sonra otomatik olarak eve döner.
+
+6) GERÇEK ZAMANLI KONTROL
+   - Terminalde hangi koordinatta olduğu, kilit durumu, yönlendirme komutları ve su bırakma olayları canlı olarak görüntülenir.
+   - Görüntü işleme ekranında FPS, HSV benzerlik oranı ve kilitli kutu grafiği canlı gözlemlenir.
+
+7) SİSTEMİ DURDURMAK İÇİN
+   - Her iki terminalde Ctrl+C ile scriptleri güvenli şekilde durdurabilirsin.
+
+NOT:
+- Drone kalkışı ve otomatik görev başlatma sırasında acil durumlarda Pixhawk üzerinden manuel müdahale yapabilirsin.
+- Sistemi test ederken önce küçük bir grid ve düşük bir uçuş irtifasıyla başlamak önerilir.
+
+---
+
+Hazırlayan: Akıllı Drone Yangın Tespit Takımı | 2025

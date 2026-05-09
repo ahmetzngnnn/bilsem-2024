@@ -1,0 +1,104 @@
+ARACIN KULLANIM SENARYOLARI ve BAĞLANTI ÖRNEKLERİ (GÜNCEL)
+
+-----------------------------------------------------------
+1) GERÇEK DRONE + PIXHAWK + MISSION PLANNER (Windows)
+
+- Pixhawk’ı USB ile bilgisayara bağla. Mission Planner'ı aç, COM portunu not et.
+- Python’da:
+    vehicle = connect('COM3', wait_ready=True, baud=57600)
+
+- Mission Planner’dan UDP bridge yaptıysan:
+    vehicle = connect('udp:127.0.0.1:14550', wait_ready=True)
+
+-----------------------------------------------------------
+2) RASPBERRY PI — GERÇEK DRONE BAĞLANTILARI
+
+A) **USB ile doğrudan bağlantı (en yaygını):**
+   - Pixhawk’ı USB kabloyla Raspberry’ye bağla.
+   - Port genellikle `/dev/ttyACM0` olur (bazen ACM1, ACM2, vs.).
+   - Komut:
+        vehicle = connect('/dev/ttyACM0', wait_ready=True, baud=57600)
+
+B) **Telemetri (Sik/SikRadio, 3DR vb):**
+   - USB portuna bağlıysa:
+        vehicle = connect('/dev/ttyUSB0', wait_ready=True, baud=57600)
+   - Farklı bir USB portuysa (örneğin birden fazla cihaz takılıysa):
+        vehicle = connect('/dev/ttyUSB1', wait_ready=True, baud=57600)
+   - UART GPIO üzerinden (Pİ header):
+        vehicle = connect('/dev/serial0', wait_ready=True, baud=57600)
+        vehicle = connect('/dev/serial1', wait_ready=True, baud=57600)
+
+C) **Mission Planner veya başka bir PC ile TCP üzerinden (bridge ile):**
+   - (Mission Planner PC IP ve portunu kullan)
+        vehicle = connect('tcp:192.168.1.42:5762', wait_ready=True)
+
+-----------------------------------------------------------
+3) UBUNTU GAZEBO + SITL (SİMÜLASYON)
+
+- sim_vehicle.py -v ArduCopter -f gazebo-iris --console --map
+- Python’da:
+    vehicle = connect('udp:127.0.0.1:14550', wait_ready=True)
+
+-----------------------------------------------------------
+4) WINDOWS/LINUX PC + MISSION PLANNER/TELEMETRİ
+
+A) **USB üzerinden Pixhawk bağlantısı:**
+    vehicle = connect('/dev/ttyACM0', wait_ready=True, baud=57600)
+
+B) **USB-TTL/Telemetri üzerinden:**
+    vehicle = connect('/dev/ttyUSB0', wait_ready=True, baud=57600)
+
+C) **Mission Planner UDP/TCP bridge ile:**
+    vehicle = connect('tcp:192.168.1.42:5762', wait_ready=True)
+    vehicle = connect('udp:127.0.0.1:14550', wait_ready=True)
+
+-----------------------------------------------------------
+5) JETSON NANO / LAPTOP / PC
+
+- Aynı şekilde tüm Linux portlarını kullanabilirsin:
+    vehicle = connect('/dev/ttyACM0', wait_ready=True, baud=57600)
+    vehicle = connect('/dev/ttyUSB0', wait_ready=True, baud=57600)
+    vehicle = connect('/dev/serial0', wait_ready=True, baud=57600)
+    vehicle = connect('udp:127.0.0.1:14550', wait_ready=True)
+
+-----------------------------------------------------------
+KONTROL ve İPUÇLAR:
+
+- Hangi portun kullanılacağını görmek için:
+    ls /dev/ttyACM*   veya   ls /dev/ttyUSB*   veya   ls /dev/serial*
+- USB kabloyu çıkarıp tekrar takınca port numarası değişebilir!
+- Sadece **bir script** aynı anda Pixhawk’a bağlanabilir.
+- Her bağlantıdan önce Pixhawk’ın tam olarak açıldığından emin ol.
+
+-----------------------------------------------------------
+GENEL TEST ve BAĞLANTI AKIŞI
+
+1) Raspberry Pi’ye Pixhawk’ı USB ile bağla:
+   ls /dev/ttyACM*
+   # Genelde /dev/ttyACM0 çıkar. Emin değilsen:
+   dmesg | grep tty
+
+2) Kodda portu güncelle:
+   vehicle = connect('/dev/ttyACM0', wait_ready=True, baud=57600)
+
+3) Mission Planner, Gazebo veya başka bir sistemde kodunu yukarıdaki gibi düzenle ve başlat.
+
+-----------------------------------------------------------
+BAĞLANTI ÖZET TABLOSU
+
+| Donanım         | Bağlantı Türü | Python Parametresi                    |
+|-----------------|--------------|---------------------------------------|
+| RPi + Pixhawk   | USB          | '/dev/ttyACM0', baud=57600            |
+| RPi + Telemetri | USB          | '/dev/ttyUSB0', baud=57600            |
+| RPi + UART      | GPIO         | '/dev/serial0', baud=57600            |
+| PC + Pixhawk    | USB          | '/dev/ttyACM0', baud=57600 (Linux)    |
+| PC + Pixhawk    | COM          | 'COM3', baud=57600 (Windows)          |
+| Simülasyon      | UDP          | 'udp:127.0.0.1:14550'                 |
+| MP TCP Bridge   | TCP          | 'tcp:IP_ADRES:PORT'                   |
+
+-----------------------------------------------------------
+Tüm bağlantı tipleri için:
+- Kodun başındaki vehicle = connect(...) satırını yukarıdaki gibi ayarlaman yeterli.
+- Test öncesi kablo ve portları **lsusb** veya **ls /dev/** ile kontrol et.
+
+Hazırlayan: Akıllı Drone Yangın Takımı | 2025

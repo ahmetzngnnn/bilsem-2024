@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Büyük installer ve arşivler
+*.exe
+bilsem.zip
+bilsem/bilsem.zip
+drone_bilsem.zip
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+~$*
